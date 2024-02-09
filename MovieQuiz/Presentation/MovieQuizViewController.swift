@@ -16,18 +16,18 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private var currentQuestion: QuizQuestion?
     private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
     private var alertPresenter: AlertPresenterProtocol?
+    private var statisticService: StatisticService = StatisticServiceImplementation()
     
     override func viewDidLoad() {
+        super.viewDidLoad()
         imageView.layer.cornerRadius = 20.0
         noButton.isEnabled = true
         yesButton.isEnabled = true
         
-        questionFactory = QuestionFactory()
+        questionFactory.delegate = self
         questionFactory.requestNextQuestion()
         
         alertPresenter = AlertPresenter(delegate: self)
-        
-        super.viewDidLoad()
     }
     
     // MARK: - QuestionFactoryDelegate
@@ -49,6 +49,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
         let givenAnswer = false
         noButton.isEnabled = false
+        yesButton.isEnabled = false
+
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
     @IBAction private func yesButtonTapped(_ sender: UIButton){    // YES BUTTON
@@ -57,6 +59,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
         let givenAnswer = true
         yesButton.isEnabled = false
+        noButton.isEnabled = false
+
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
     
@@ -92,16 +96,25 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
-            let text = "Ваш результат: \(correctAnswers)/10"
-            let viewModel = QuizResultViewModel(
+            statisticService.store(correct: correctAnswers, total: questionsAmount)
+            let quizCount = statisticService.gamesCount
+            let bestGame = statisticService.bestGame
+            let formattedAccuracy = String(format: "%.0f%%", statisticService.totalAccuracy * 100)
+            let text = """
+                        Ваш результат: \(correctAnswers)/\(questionsAmount)
+                        Количество сыгранных викторин: \(quizCount)
+                        Рекорд: \(bestGame.correct)/\(bestGame.total) (\(bestGame.date.dateTimeString))
+                        Средняя точность: \(formattedAccuracy)
+                        """
+            let results = QuizResultViewModel(
                 title: "Этот раунд окончен!",
                 text: text,
                 buttonText: "Сыграть еще раз?")
-            show(quiz: viewModel)
+            show(quiz: results)
         } else {
             currentQuestionIndex += 1
             
-            imageView.layer.borderColor = UIColor.White.cgColor
+            imageView.layer.borderColor = UIColor.Background.cgColor
             self.questionFactory.requestNextQuestion()
             
             noButton.isEnabled = true
@@ -122,6 +135,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             }
         )
         alertPresenter?.show(alertModel: alertModel)
+        noButton.isEnabled = true
+        yesButton.isEnabled = true
     }
     
     func show(alert: UIAlertController) {
