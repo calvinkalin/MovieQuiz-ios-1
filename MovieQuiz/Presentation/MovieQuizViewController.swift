@@ -20,13 +20,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     @IBOutlet private var noButton: UIButton!
     @IBOutlet private var yesButton: UIButton!
     
-    private var currentQuestionIndex = 0
     private var correctAnswers = 0
-    private let questionsAmount: Int = 10
     private var currentQuestion: QuizQuestion?
     private var questionFactory: QuestionFactoryProtocol?
     private var alertPresenter: AlertPresenterProtocol?
     private var statisticService: StatisticService = StatisticServiceImplementation()
+    private let presenter = MovieQuizPresenter()
     
     override func viewDidLoad() {
         imageView.layer.cornerRadius = 20.0
@@ -72,18 +71,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             return
         }
         currentQuestion = question
-        let viewModel = convert(model: question)
+        let viewModel = presenter.convert(model: question)
         DispatchQueue.main.async { [weak self] in
             self?.show(quiz: viewModel)
         }
-    }
-    
-    private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        let questionStep = QuizStepViewModel(
-            image: UIImage(data: model.image) ?? UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
-        return questionStep
     }
     
     private func show(quiz step: QuizStepViewModel) {
@@ -110,14 +101,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     private func showNextQuestionOrResults() {
-        if currentQuestionIndex == questionsAmount - 1 {
+        if presenter.isLastQuestion() {
             hideLoadingIndicator()
-            statisticService.store(correct: correctAnswers, total: questionsAmount)
+            statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
             let quizCount = statisticService.gamesCount
             let bestGame = statisticService.bestGame
             let formattedAccuracy = String(format: "%.0f%%", statisticService.totalAccuracy * 100)
             let text = """
-                        Ваш результат: \(correctAnswers)/\(questionsAmount)
+                        Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
                         Количество сыгранных викторин: \(quizCount)
                         Рекорд: \(bestGame.correct)/\(bestGame.total) (\(bestGame.date.dateTimeString))
                         Средняя точность: \(formattedAccuracy)
@@ -125,10 +116,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             let results = QuizResultViewModel(
                 title: "Этот раунд окончен!",
                 text: text,
-                buttonText: "Сыграть еще раз?")
+                buttonText: "Сыграть еще раз")
             show(quiz: results)
         } else {
-            currentQuestionIndex += 1
+            presenter.switchToNextQuestion()
             
             imageView.layer.borderColor = UIColor.Background.cgColor
             showActivityIndicator()
@@ -145,7 +136,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             buttonText: result.buttonText,
             buttonAction: { [weak self] in
                 guard let self = self else { return }
-                self.currentQuestionIndex = 0
+                self.presenter.resetQuestionIndex()
                 self.correctAnswers = 0
                 self.questionFactory?.requestNextQuestion()
             }
@@ -176,7 +167,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
                                     buttonText: "Попробовать ещё раз",
                                     buttonAction: { [weak self] in
             guard let self = self else { return }
-            self.currentQuestionIndex = 0
+            self.presenter.resetQuestionIndex()
             self.correctAnswers = 0
             self.questionFactory?.loadData()
         }
