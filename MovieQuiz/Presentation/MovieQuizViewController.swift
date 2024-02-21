@@ -87,6 +87,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     private func show(quiz step: QuizStepViewModel) {
+        hideLoadingIndicator()
         imageView.image = step.image
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
@@ -110,6 +111,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
+            hideLoadingIndicator()
             statisticService.store(correct: correctAnswers, total: questionsAmount)
             let quizCount = statisticService.gamesCount
             let bestGame = statisticService.bestGame

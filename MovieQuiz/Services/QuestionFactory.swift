@@ -46,16 +46,16 @@ final class QuestionFactory: QuestionFactoryProtocol {
             let rating = Float(movie.rating) ?? 0
             
             let text = "Рейтинг этого фильма больше чем 7?"
-                   let correctAnswer = rating > 7
-                   
-                   let question = QuizQuestion(image: imageData,
-                                                text: text,
-                                                correctAnswer: correctAnswer)
-                   
-                   DispatchQueue.main.async { [weak self] in
-                       guard let self = self else { return }
-                       self.delegate?.didReceiveNextQuestion(question: question)
-                   }
+            let correctAnswer = rating > 7
+            
+            let question = QuizQuestion(image: imageData,
+                                        text: text,
+                                        correctAnswer: correctAnswer)
+            
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.delegate?.didReceiveNextQuestion(question: question)
+            }
         }
     }
     
