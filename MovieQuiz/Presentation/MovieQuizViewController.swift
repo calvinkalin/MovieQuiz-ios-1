@@ -28,6 +28,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private let presenter = MovieQuizPresenter()
     
     override func viewDidLoad() {
+        super.viewDidLoad()
+        presenter.viewController = self
+        
         imageView.layer.cornerRadius = 20.0
         changeButtonState(true)
         
@@ -37,31 +40,19 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         showActivityIndicator()
         questionFactory?.loadData()
                 
-        super.viewDidLoad()
     }
     
     
     @IBAction private func noButtonTapped(_ sender: UIButton){
-        guard let currentQuestion = currentQuestion else {
-            return
-        }
-        let givenAnswer = false
-        changeButtonState(false)
-
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        presenter.currentQuestion = currentQuestion
+        presenter.noButtonTapped(sender)
     }
     @IBAction private func yesButtonTapped(_ sender: UIButton){
-        guard let currentQuestion = currentQuestion else {
-            return
-        }
-        let givenAnswer = true
-        
-        changeButtonState(false)
-
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        presenter.currentQuestion = currentQuestion
+        presenter.yesButtonTapped(sender)
     }
     
-    private func changeButtonState(_ enabled: Bool) {
+    func changeButtonState(_ enabled: Bool) {
         yesButton.isEnabled = enabled
         noButton.isEnabled = enabled
     }
@@ -85,7 +76,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         imageView.layer.borderColor = UIColor.Black.cgColor
     }
     
-    private func showAnswerResult(isCorrect: Bool) {
+    func showAnswerResult(isCorrect: Bool) {
         if isCorrect {
             correctAnswers += 1
         }
