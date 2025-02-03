@@ -2,7 +2,7 @@ import Foundation
 
 struct AlertModel {
     let title: String
-    let message: String
+    let text: String
     let buttonText: String
-    var buttonAction: (() -> Void)?
+    var completion: (() -> Void)?
 }
